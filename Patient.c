@@ -2,11 +2,14 @@
 #include <string.h>
 #include <stdlib.h>
 #include "patient.h"
-
-int verify_user()
-{
 #define USER_ID "receptionist"
 #define USER_PASSWORD "password123"
+#define MAX_PATIENTS 1000
+
+
+int verify_patient_user()
+{
+
 
     char user_id[15];
     char user_pass[15];
@@ -26,7 +29,7 @@ int verify_user()
         while (1)
         {
             printf("enter the option:\n");
-            printf("1. Register patient\n 2. Update patient\n3. Display patients\n4. Search by ID\n5. Search by Name\n6. Exit\n");
+            printf("1. Register patient\n 2. Update patient\n3. Display patients\n4. Search by ID\n5. Search by Name\n6. Save data and Exit\n");
             scanf("%d", &option);
 
             switch (option)
@@ -35,7 +38,8 @@ int verify_user()
                 if (total_patients < MAX_PATIENTS)
                 {
                     register_patient(&patients[total_patients++]);
-                } else
+                }
+                else
                 {
                     printf("limit Reached\n");
                 }
@@ -46,17 +50,17 @@ int verify_user()
                     int patient_id;
                     printf("enter patient id to update: ");
                     scanf("%d", &patient_id);
-                    int found = 0;
+                    int patient_found = 0;
                     for (int  patient_index = 0;  patient_index < total_patients;  patient_index++)
                     {
                         if (patients[ patient_index].patient_id == patient_id)
                         {
-                            update_patient(&patients[ patient_index]);
-                            found = 1;
+                            update_patient_details(&patients[ patient_index]);
+                            patient_found = 1;
                             break;
                         }
                     }
-                    if (!found)
+                    if (!patient_found)
                     {
                         printf("patient id not found.\n");
                     }
@@ -67,7 +71,7 @@ int verify_user()
                 }
                 break;
             case 3:
-                display_patient(patients, total_patients);
+                display_patient_details(patients, total_patients);
                 break;
             case 4:
                 search_by_patient_id(patients, total_patients);
@@ -76,11 +80,13 @@ int verify_user()
                 search_by_patient_name(patients, total_patients);
                 break;
             case 6:
-                 save_data(patients, total_patients);
-                 printf("saved the patient data and exiting.\n");
+                save_patient_data(patients, total_patients);
+                printf("saved the patient data and exiting.\n");
                 return 0;
+                break;
             default:
                 printf("invalid option.\n");
+                break;
             }
         }
     }
@@ -91,12 +97,12 @@ int verify_user()
         scanf("%d",&choice);
         if(choice==1)
         {
-            printf("contact admin for changes\n");
+            printf("contact HR Manager for changes\n");
         }
         else if (choice==2)
         {
             printf("invalid credentials.You can just view patients.\n");
-            display_patient(patients, total_patients);
+            display_patient_details(patients, total_patients);
         }
         else
         {
@@ -126,37 +132,42 @@ void register_patient(struct patient *p)
     printf(" registeration of patient is  done\n");
 }
 
-void update_patient(struct patient *p)
+void update_patient_details(struct patient *p)
 {
     int choice;
     printf("which detials you want to update?\n");
-    printf("1. Name\n2. Gender\n3. Age\n4. Address\n5. Contact number\n6. Emergency contact number\n");
+    printf("1.ID\n 2. Name\n3. Gender\n4. Age\n5. Address\n6. Contact number\n7. Emergency contact number\n");
     printf("Enter your choice: ");
     scanf("%d", &choice);
 
     switch (choice)
     {
     case 1:
+        printf("enter new patient ID: ");
+        scanf("%d",p->patient_id);
+        break;
+
+    case 2:
         printf("enter new patient name: ");
         scanf("%s", p->patient_name);
         break;
-    case 2:
+    case 3:
         printf("enter new patient gender: ");
         scanf("%s", p->patient_gender);
         break;
-    case 3:
+    case 4:
         printf("enter new patient age: ");
         scanf("%d", &p->patient_age);
         break;
-    case 4:
+    case 5:
         printf("enter new patient address: ");
         scanf("%s", p->patient_address);
         break;
-    case 5:
+    case 6:
         printf("enter new patient contact number: ");
         scanf("%s", p->patient_contact_number);
         break;
-    case 6:
+    case 7:
         printf("enter new patient emergency contact number: ");
         scanf("%s", p->patient_emergency_contact_number);
         break;
@@ -167,7 +178,7 @@ void update_patient(struct patient *p)
     printf("required patient details updated\n");
 }
 
-void display_patient(struct patient patients[], int total_patients)
+void display_patient_details(struct patient patients[], int total_patients)
 {
     if (total_patients == 0)
     {
@@ -198,7 +209,7 @@ void search_by_patient_id(struct patient patients[], int total_patients)
     {
         if (patients[ patient_index].patient_id == search_id)
         {
-            printf("patient found and details as follows:\n");
+            printf("patient with %d ID found and details are as follows:\n",search_id);
             printf("patient ID: %d\n", patients[ patient_index].patient_id);
             printf("patient name: %s\n", patients[ patient_index].patient_name);
             printf("patient gender: %s\n", patients[ patient_index].patient_gender);
@@ -226,7 +237,7 @@ void search_by_patient_name(struct patient patients[], int total_patients)
     {
         if (strcmp(search_name, patients[patient_index].patient_name) == 0)
         {
-            printf("patient with %s found:\n",search_name);
+            printf("patient with %s name foundand details are as follows:\n",search_name);
             printf("patient ID: %d\n", patients[patient_index].patient_id);
             printf("patient name: %s\n", patients[patient_index].patient_name);
             printf("patient gender: %s\n", patients[patient_index].patient_gender);
@@ -245,31 +256,33 @@ void search_by_patient_name(struct patient patients[], int total_patients)
 }
 
 
-void save_data(struct patient patients[], int total_patients)
+void save_patient_data(struct patient patients[], int total_patients)//storing data to file
 {
-    FILE *file = fopen("patient_data.txt", "w");
+    FILE *file;
+    file = fopen("patient_data.txt", "w");
     if (file == NULL)
     {
-        printf("Error saving data to file.\n");
-        return;
+        printf("error in saving patient data to file.\n");
+        return 1;
     }
-    fwrite(&total_patients, sizeof(int), 1, file);  // size_t fwrite(const void *ptr, size_t size, size_t count, FILE *stream);
-    fwrite(patients, sizeof(struct patient), total_patients, file);
+    fwrite(&total_patients, sizeof(int), 1, file);//for writing num of patients to the file
+    fwrite(patients, sizeof(struct patient), total_patients, file);//array of patients to the file
     fclose(file);
-    printf("Data saved successfully.\n");
+    printf("patient data saved successfully.\n");
 }
 
-int load_patient_data(struct patient patients[])
+int load_patient_data(struct patient patients[])//loading data from file
 {
-    FILE *file = fopen("patient_data.txt", "r");
+    FILE *file;
+    file= fopen("patient_data.txt", "r");
     if (file == NULL)
     {
-        printf("No data exist\n");
+        printf("no patient data exist\n");
         return 0;
     }
     int total_patients = 0;
-    fread(&total_patients, sizeof(int), 1, file);//size_t fread(void *ptr, size_t size, size_t count, FILE *stream);
-    fread(patients, sizeof(struct patient), total_patients, file);
+    fread(&total_patients, sizeof(int), 1, file);//for reading num of patients from the file
+    fread(patients, sizeof(struct patient), total_patients, file);//array of patients from the file
     fclose(file);
     printf("patient data loaded sucessfully %d patients found.\n", total_patients);
     return total_patients;
